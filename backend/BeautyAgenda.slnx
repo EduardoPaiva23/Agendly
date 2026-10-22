@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BeautyAgenda.Api/BeautyAgenda.Api.csproj" />
+    <Project Path="src/BeautyAgenda.Application/BeautyAgenda.Application.csproj" />
+    <Project Path="src/BeautyAgenda.Domain/BeautyAgenda.Domain.csproj" />
+    <Project Path="src/BeautyAgenda.Infrastructure/BeautyAgenda.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BeautyAgenda.IntegrationTests/BeautyAgenda.IntegrationTests.csproj" />
+    <Project Path="tests/BeautyAgenda.UnitTests/BeautyAgenda.UnitTests.csproj" />
+  </Folder>
+</Solution>
