@@ -19,6 +19,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/admin/login',
+    hydrateFallbackElement: <Loading />,
     lazy: async () => ({ Component: (await import('../features/auth/LoginPage')).LoginPage }),
   },
   {

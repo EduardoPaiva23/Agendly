@@ -18,7 +18,7 @@ export function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Painel" description={<span className="capitalize">{formatDay(today)}</span>} />
+      <PageHeader title="Painel" description={<span className="inline-block first-letter:uppercase">{formatDay(today)}</span>} />
 
       {summary.isError && <Alert tone="error">{errorMessage(summary.error)}</Alert>}
 

@@ -67,7 +67,7 @@ export function CustomerStep({
   return (
     <Card>
       <h2 className="font-semibold">Seus dados</h2>
-      <p className="mb-4 mt-1 text-sm capitalize-first text-slate-600">{summary}</p>
+      <p className="mb-4 mt-1 text-sm first-letter:uppercase text-slate-600">{summary}</p>
 
       <form className="space-y-4" noValidate onSubmit={handleSubmit((values) => book.mutate(values))}>
         <Field label="Nome" error={errors.customerName?.message}>

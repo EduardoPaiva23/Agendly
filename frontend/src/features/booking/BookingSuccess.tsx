@@ -24,7 +24,7 @@ export function BookingSuccess({ appointment, onNew }: { appointment: PublicAppo
       </div>
       <div>
         <h1 className="text-xl font-bold">Agendamento realizado!</h1>
-        <p className="mt-1 capitalize text-slate-600">
+        <p className="mt-1 text-slate-600 first-letter:uppercase">
           {formatLongDate(appointment.startAt)}, às {formatTime(appointment.startAt)}
         </p>
         <p className="text-sm text-slate-500">com {appointment.professionalName}</p>

@@ -2,7 +2,7 @@ import { Link, NavLink, Outlet } from 'react-router'
 
 export function PublicLayout() {
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `rounded-md px-3 py-1.5 text-sm font-medium ${isActive ? 'bg-rose-50 text-rose-700' : 'text-slate-600 hover:text-slate-900'}`
+    `rounded-md px-2 py-1.5 text-xs font-medium sm:px-3 sm:text-sm ${isActive ? 'bg-rose-50 text-rose-700' : 'text-slate-600 hover:text-slate-900'}`
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -11,7 +11,7 @@ export function PublicLayout() {
           <Link to="/" className="flex items-center gap-2 text-lg font-bold text-slate-900">
             <span aria-hidden>✂️</span> BeautyAgenda
           </Link>
-          <nav className="flex gap-1">
+          <nav className="flex shrink-0 gap-1 whitespace-nowrap">
             <NavLink to="/" end className={linkClass}>
               Agendar
             </NavLink>

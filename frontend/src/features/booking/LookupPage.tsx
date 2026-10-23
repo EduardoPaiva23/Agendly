@@ -73,7 +73,7 @@ function AppointmentView({ reference }: { reference: string }) {
     <Card className="mx-auto max-w-xl space-y-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold capitalize">{formatLongDate(a.startAt)}</h1>
+          <h1 className="text-xl font-bold first-letter:uppercase">{formatLongDate(a.startAt)}</h1>
           <p className="text-slate-600">
             {formatTime(a.startAt)} – {formatTime(a.endAt)} · {a.professionalName}
           </p>

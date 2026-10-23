@@ -81,7 +81,7 @@ export function SlotStep({
         />
       </div>
 
-      <p className="mb-3 text-sm font-medium capitalize text-slate-700">{formatDay(date)}</p>
+      <p className="mb-3 text-sm font-medium text-slate-700 first-letter:uppercase">{formatDay(date)}</p>
 
       {availability.isPending ? (
         <Loading label="Buscando horários livres…" />
