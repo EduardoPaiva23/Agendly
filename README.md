@@ -9,7 +9,7 @@ O foco do projeto não é a quantidade de telas, e sim a **qualidade das regras 
 | **Backend** | C# · .NET 10 · ASP.NET Core Web API · EF Core 10 · SQL Server 2022 · ASP.NET Core Identity + JWT · FluentValidation |
 | **Frontend** | React 19 · TypeScript · Vite 8 · Tailwind CSS 4 · React Router 8 · TanStack Query 5 · React Hook Form + Zod 4 · FullCalendar 6 |
 | **Testes** | xUnit · WebApplicationFactory · Testcontainers (SQL Server real em Docker) |
-| **Infra local** | Docker Compose (SQL Server) · user-secrets |
+| **Infra** | Docker Compose (SQL Server + API + Nginx) · GitHub Actions · user-secrets |
 
 ---
 
@@ -27,6 +27,8 @@ O foco do projeto não é a quantidade de telas, e sim a **qualidade das regras 
 - [Configuração](#configuração)
 - [Estrutura de pastas](#estrutura-de-pastas)
 - [Status e próximos passos](#status-e-próximos-passos)
+
+**Documentação detalhada:** [arquitetura e decisões](docs/architecture.md) · [banco de dados](docs/database.md) · [regras de negócio → código → teste](docs/business-rules.md) · [roteiro para entrevistas](docs/interview.md)
 
 ---
 
@@ -322,6 +324,8 @@ SPA em React + TypeScript (`strict`), organizada por funcionalidade (`src/featur
 
 ## Testes
 
+O pipeline de CI executa todas as etapas abaixo a cada push e pull request.
+
 ```bash
 cd backend
 dotnet test                                    # tudo (requer Docker em execução)
@@ -330,7 +334,7 @@ dotnet test tests/BeautyAgenda.UnitTests       # só unitários (sem Docker)
 
 | Suíte | Qtde | O que cobre |
 |---|---|---|
-| **Unitários** (`BeautyAgenda.UnitTests`) | 56 | Sobreposição de intervalos, cálculo de slots (limite do expediente, pausa, duração somada, bloqueio parcial, adjacência, antecedência/horizonte), transições de estado, snapshot de preço, fuso horário, validação de expediente, telefone e referência pública. Executam em < 1 s. |
+| **Unitários** (`BeautyAgenda.UnitTests`) | 57 | Sobreposição de intervalos, cálculo de slots (limite do expediente, pausa, duração somada, bloqueio parcial, adjacência, antecedência/horizonte), transições de estado, snapshot de preço, fuso horário, validação de expediente, mensagens em pt-BR, telefone e referência pública. Executam em < 1 s. |
 | **Integração** (`BeautyAgenda.IntegrationTests`) | 41 | API completa via `WebApplicationFactory` contra **SQL Server real** em container (Testcontainers), com migrations aplicadas e relógio fixo. Cobre 401/403, CRUDs com 400/404/409, reserva, **concorrência (10 requisições paralelas → 1 sucesso)**, cancelamento pelo link, folga sobre atendimento (409), transições, reagendamento com conflito sem alterar o original, preços preservados e ausência de dados pessoais nas respostas públicas. |
 
 Os testes unitários validam as **regras**; os de integração validam o que só existe com a infraestrutura real: SQL gerado pelo EF, transações, travas e serialização HTTP.
@@ -348,14 +352,30 @@ npm run build       # build de produção
 
 ## Como executar
 
-### Pré-requisitos
+Há dois modos: **stack completo em Docker** (mais rápido para avaliar) ou **desenvolvimento local** (API e frontend rodando na máquina, com hot reload).
+
+### Opção A — Stack completo com Docker
+
+```bash
+cp .env.example .env      # ajuste MSSQL_SA_PASSWORD, JWT_KEY e ADMIN_PASSWORD
+docker compose up -d --build
+```
+
+- Aplicação: http://localhost:8080 (agendamento) e http://localhost:8080/admin (painel, com `ADMIN_EMAIL` / `ADMIN_PASSWORD`)
+- O Nginx serve o frontend e faz proxy de `/api` para a API, na mesma origem e sem CORS. A porta da API não é exposta.
+- A API aplica as migrations e cria os dados de demonstração na primeira subida (`DEMO_DATA=true`).
+- Imagens: API em `aspnet:10.0`, rodando como usuário não-root; frontend em `nginx:alpine`, com cache longo para os assets com hash e cabeçalhos de segurança.
+
+### Opção B — Desenvolvimento local
+
+#### Pré-requisitos
 
 - [.NET SDK 10](https://dotnet.microsoft.com/download)
 - [Node.js 20+](https://nodejs.org/) (desenvolvido com Node 24)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (SQL Server e testes de integração)
 - Ferramenta do EF Core: `dotnet tool install -g dotnet-ef`
 
-### 1. Banco de dados
+#### 1. Banco de dados
 
 ```bash
 cp .env.example .env          # defina uma senha forte em MSSQL_SA_PASSWORD
@@ -364,7 +384,7 @@ docker compose up -d sqlserver
 
 O SQL Server fica em `localhost,14333`.
 
-### 2. Configuração da API (segredos locais)
+#### 2. Configuração da API (segredos locais)
 
 ```bash
 cd backend/src/BeautyAgenda.Api
@@ -377,7 +397,7 @@ dotnet user-secrets set "Seed:StaffEmail" "recepcao@beautyagenda.local"
 dotnet user-secrets set "Seed:StaffPassword" "<senha>"
 ```
 
-### 3. Migrations
+#### 3. Migrations
 
 Em `Development`, a API **aplica as migrations automaticamente** ao iniciar (`Database:ApplyMigrationsOnStartup`). Para aplicar manualmente:
 
@@ -393,7 +413,7 @@ Para criar uma nova migration:
 dotnet ef migrations add <Nome> --project src/BeautyAgenda.Infrastructure --startup-project src/BeautyAgenda.Infrastructure --output-dir Persistence/Migrations
 ```
 
-### 4. API
+#### 4. API
 
 ```bash
 cd backend/src/BeautyAgenda.Api
@@ -406,7 +426,7 @@ dotnet run --launch-profile http
 
 Na primeira execução em `Development` são criados os perfis, os usuários do seed e **dados de demonstração** (7 serviços, 3 profissionais, expediente de terça a sábado e alguns agendamentos).
 
-### 5. Frontend
+#### 5. Frontend
 
 ```bash
 cd frontend
@@ -422,7 +442,7 @@ O Vite faz proxy de `/api` para `http://localhost:5133` (ajustável com `VITE_AP
 ### Solução de problemas
 
 - **Docker não inicia no Windows / erro `CreateVm E_ABORT` ou "arquivo de paginação muito pequeno":** o WSL 2 precisa de memória virtual. Ative o arquivo de paginação (*Configurações avançadas do sistema → Desempenho → Memória virtual → Gerenciar automaticamente*) e reinicie. Opcionalmente, limite o WSL em `%USERPROFILE%\.wslconfig` (`[wsl2]` / `memory=4GB`).
-- **Pasta dentro do OneDrive:** `node_modules`, `bin` e `obj` geram muita sincronização. Prefira clonar fora do OneDrive ou excluir essas pastas da sincronização.
+- **Pasta dentro do OneDrive:** além de sincronizar `node_modules`, `bin` e `obj`, o OneDrive converte arquivos em *reparse points* ("Arquivos sob demanda"), e o `docker build` no Windows falha com `invalid file request`. Clone o projeto **fora** do OneDrive (ex.: `C:devBeautyAgenda`).
 
 ---
 
@@ -456,6 +476,7 @@ Todas as opções podem ser definidas por variável de ambiente usando `__` como
 BeautyAgenda/
 ├── backend/
 │   ├── BeautyAgenda.slnx
+│   ├── Dockerfile
 │   ├── src/
 │   │   ├── BeautyAgenda.Domain/          # Entities/, Scheduling/ (TimeRange, AvailabilityCalculator)
 │   │   ├── BeautyAgenda.Application/     # Appointments/, Availability/, Catalog/, Customers/, ...
@@ -465,6 +486,7 @@ BeautyAgenda/
 │       ├── BeautyAgenda.UnitTests/
 │       └── BeautyAgenda.IntegrationTests/  # ApiFactory (Testcontainers) + cenários
 ├── frontend/
+│   ├── Dockerfile, nginx.conf
 │   └── src/
 │       ├── components/   # UI reutilizável
 │       ├── features/     # booking, calendar, appointments, customers, professionals, services, ...
@@ -472,6 +494,8 @@ BeautyAgenda/
 │       ├── lib/          # cliente HTTP, auth, datas/fuso, rótulos
 │       ├── routes/       # rotas e proteção
 │       └── types/        # contratos da API
+├── docs/            # arquitetura, banco, regras de negócio, roteiro de entrevista
+├── .github/workflows/ci.yml
 ├── docker-compose.yml
 └── .env.example
 ```
@@ -492,11 +516,15 @@ BeautyAgenda/
 - [x] Sem dados pessoais nos endpoints públicos
 - [x] Testes automatizados das regras principais
 
+- [x] Mensagens de erro da API em português
+- [x] Documentação em `docs/`
+
+**Em validação**
+- [ ] Docker Compose completo e pipeline de CI: arquivos prontos, mas ainda não executados de ponta a ponta. O CI (`.github/workflows/ci.yml`) roda build e testes do backend com Testcontainers, checagem de tipos, lint e build do frontend, e monta as imagens Docker. Ele será validado no primeiro push ao GitHub.
+
 **Próximos passos**
-- [ ] Docker Compose completo (SQL Server + API + frontend com Nginx)
-- [ ] Pipeline de CI no GitHub Actions (build, testes com Testcontainers, lint)
-- [ ] Mensagens de erro da API em português
-- [ ] Documentação complementar em `docs/` (arquitetura, banco e regras de negócio)
 - [ ] Capturas de tela e demonstração online
+- [ ] Testes para as lacunas listadas em [business-rules.md](docs/business-rules.md)
+- [ ] Logs estruturados e rastreamento (Serilog / OpenTelemetry)
 
 **Fora do escopo do MVP:** notificações por e-mail/WhatsApp, pagamentos online, emissão fiscal, múltiplas unidades e aplicativo mobile.
