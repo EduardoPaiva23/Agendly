@@ -1,3 +1,6 @@
+# Full stack:   docker compose up -d --build      -> http://localhost:8080
+# Database only (local dev with dotnet run / npm run dev):  docker compose up -d sqlserver
+
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -16,6 +19,35 @@ services:
       timeout: 5s
       retries: 12
       start_period: 20s
+
+  api:
+    build: ./backend
+    container_name: beautyagenda-api
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # Trust X-Forwarded-For from the nginx container (the API port is not published).
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      ConnectionStrings__Default: "Server=sqlserver,1433;Database=BeautyAgenda;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
+      Jwt__Key: ${JWT_KEY:-}  # required by the API (32+ chars); it refuses to start without it
+      Database__ApplyMigrationsOnStartup: "true"
+      Seed__AdminEmail: ${ADMIN_EMAIL:-admin@beautyagenda.local}
+      Seed__AdminPassword: ${ADMIN_PASSWORD:-}
+      Seed__StaffEmail: ${STAFF_EMAIL:-}
+      Seed__StaffPassword: ${STAFF_PASSWORD:-}
+      Seed__DemoData: ${DEMO_DATA:-true}
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    container_name: beautyagenda-web
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped
 
 volumes:
   sqldata:
