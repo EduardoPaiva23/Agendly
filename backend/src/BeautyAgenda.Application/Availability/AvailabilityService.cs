@@ -27,10 +27,10 @@ public sealed class AvailabilityQueryValidator : AbstractValidator<AvailabilityQ
     {
         var max = options.Value.MaxServicesPerAppointment;
         RuleFor(x => x.Date).NotEmpty();
-        RuleFor(x => x.ServiceIds).NotEmpty().WithMessage("Select at least one service.")
-            .Must(ids => ids.Count <= max).WithMessage($"Select at most {max} services.")
+        RuleFor(x => x.ServiceIds).NotEmpty().WithMessage("Selecione pelo menos um serviço.")
+            .Must(ids => ids.Count <= max).WithMessage($"Selecione no máximo {max} serviços.")
             .Must(ids => ids.All(id => id > 0) && ids.Distinct().Count() == ids.Count)
-            .WithMessage("Service ids must be positive and distinct.");
+            .WithMessage("Os serviços informados são inválidos ou repetidos.");
         RuleFor(x => x.ProfessionalId).GreaterThan(0).When(x => x.ProfessionalId.HasValue);
     }
 }
@@ -76,7 +76,7 @@ public sealed class AvailabilityService(
     {
         var services = await db.Services.Where(s => serviceIds.Contains(s.Id) && s.IsActive).ToListAsync(ct);
         if (services.Count != serviceIds.Distinct().Count())
-            throw Validation.Error("ServiceIds", "One or more services do not exist or are not available.");
+            throw Validation.Error("ServiceIds", "Um ou mais serviços não existem ou não estão disponíveis.");
         return services;
     }
 }

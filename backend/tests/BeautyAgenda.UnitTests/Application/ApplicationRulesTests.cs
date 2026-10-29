@@ -81,6 +81,21 @@ public class BusinessHoursValidatorTests
     }
 }
 
+public class ValidationLocalizationTests
+{
+    [Fact]
+    public void Built_in_messages_are_in_portuguese_with_portuguese_field_names_and_original_keys()
+    {
+        ValidationLocalization.Configure();
+        var result = new BeautyAgenda.Application.Customers.CustomerRequestValidator()
+            .Validate(new BeautyAgenda.Application.Customers.CustomerRequest("", "11987654321", "não-é-email"));
+
+        var name = Assert.Single(result.Errors, e => e.PropertyName == "Name");
+        Assert.Equal("'Nome' deve ser informado.", name.ErrorMessage);
+        Assert.Contains(result.Errors, e => e.PropertyName == "Email" && e.ErrorMessage.Contains("e-mail", StringComparison.OrdinalIgnoreCase));
+    }
+}
+
 public class SmallRulesTests
 {
     [Theory]

@@ -43,11 +43,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
         }
         catch (DbUpdateConcurrencyException)
         {
-            throw new ConflictException("The record was changed by someone else. Reload it and try again.");
+            throw new ConflictException("O registro foi alterado por outra pessoa. Recarregue e tente novamente.");
         }
         catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 2601 or 2627 })
         {
-            throw new ConflictException("A record with the same unique value already exists.");
+            throw new ConflictException("Já existe um registro com o mesmo valor único.");
         }
     }
 

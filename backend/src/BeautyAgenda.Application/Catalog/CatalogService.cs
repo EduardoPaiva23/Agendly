@@ -19,7 +19,7 @@ public sealed class ServiceRequestValidator : AbstractValidator<ServiceRequest>
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Description).MaximumLength(500);
         RuleFor(x => x.DurationMinutes).InclusiveBetween(5, 480)
-            .Must(m => m % 5 == 0).WithMessage("Duration must be a multiple of 5 minutes.");
+            .Must(m => m % 5 == 0).WithMessage("A duração deve ser múltipla de 5 minutos.");
         RuleFor(x => x.Price).InclusiveBetween(0m, 99_999.99m).PrecisionScale(10, 2, ignoreTrailingZeros: true);
     }
 }
@@ -80,7 +80,7 @@ public sealed class CatalogService(IApplicationDbContext db, IValidator<ServiceR
     private async Task EnsureNameIsFreeAsync(string name, int? exceptId, CancellationToken ct)
     {
         if (await db.Services.AnyAsync(s => s.Name == name && s.Id != exceptId, ct))
-            throw new ConflictException($"A service named '{name}' already exists.");
+            throw new ConflictException($"Já existe um serviço chamado '{name}'.");
     }
 
     private static void Apply(Service service, ServiceRequest request)

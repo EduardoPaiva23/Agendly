@@ -16,25 +16,25 @@ public sealed class UpdateBusinessHoursRequestValidator : AbstractValidator<Upda
 {
     public UpdateBusinessHoursRequestValidator()
     {
-        RuleFor(x => x.Items).NotNull().Must(i => i.Count <= 28).WithMessage("At most 28 intervals per week.");
+        RuleFor(x => x.Items).NotNull().Must(i => i.Count <= 28).WithMessage("No máximo 28 intervalos por semana.");
 
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(i => i.DayOfWeek).IsInEnum();
             item.RuleFor(i => i.StartTime).Must(t => BusinessHoursService.TryParse(t, out _))
-                .WithMessage("StartTime must be HH:mm.");
+                .WithMessage("Informe o início no formato HH:mm.");
             item.RuleFor(i => i.EndTime).Must(t => BusinessHoursService.TryParse(t, out _))
-                .WithMessage("EndTime must be HH:mm.");
+                .WithMessage("Informe o fim no formato HH:mm.");
             item.RuleFor(i => i.EndTime)
                 .Must((i, end) => !BusinessHoursService.TryParse(i.StartTime, out var s)
                                   || !BusinessHoursService.TryParse(end, out var e)
                                   || s < e)
-                .WithMessage("StartTime must be before EndTime.");
+                .WithMessage("O início deve ser antes do fim.");
         });
 
         RuleFor(x => x.Items)
             .Must(NotOverlapWithinDay)
-            .WithMessage("Intervals on the same day must not overlap.")
+            .WithMessage("Os intervalos de um mesmo dia não podem se sobrepor.")
             .When(x => x.Items is not null && x.Items.All(IsWellFormed));
     }
 

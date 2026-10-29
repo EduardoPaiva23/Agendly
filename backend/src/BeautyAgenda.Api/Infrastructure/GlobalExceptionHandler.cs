@@ -19,28 +19,28 @@ public sealed class GlobalExceptionHandler(IProblemDetailsService problemDetails
                     .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).Distinct().ToArray()))
             {
                 Status = StatusCodes.Status400BadRequest,
-                Title = "One or more validation errors occurred.",
+                Title = "Um ou mais campos são inválidos.",
             },
             NotFoundException => new ProblemDetails
             {
-                Status = StatusCodes.Status404NotFound, Title = "Resource not found.", Detail = exception.Message,
+                Status = StatusCodes.Status404NotFound, Title = "Registro não encontrado.", Detail = exception.Message,
             },
             ConflictException or DomainException => new ProblemDetails
             {
-                Status = StatusCodes.Status409Conflict, Title = "Conflict.", Detail = exception.Message,
+                Status = StatusCodes.Status409Conflict, Title = "Conflito.", Detail = exception.Message,
             },
             BadHttpRequestException bad => new ProblemDetails
             {
-                Status = bad.StatusCode, Title = "Bad request.",
+                Status = bad.StatusCode, Title = "Requisição inválida.",
             },
             OperationCanceledException when context.RequestAborted.IsCancellationRequested => new ProblemDetails
             {
-                Status = 499, Title = "Request cancelled.",
+                Status = 499, Title = "Requisição cancelada.",
             },
             _ => new ProblemDetails
             {
                 Status = StatusCodes.Status500InternalServerError,
-                Title = "An unexpected error occurred.",
+                Title = "Ocorreu um erro inesperado. Tente novamente.",
             },
         };
 

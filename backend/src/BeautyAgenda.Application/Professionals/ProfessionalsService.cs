@@ -21,7 +21,7 @@ public sealed class ProfessionalRequestValidator : AbstractValidator<Professiona
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
         RuleFor(x => x.Phone).Must(PhoneNumber.IsValid).When(x => !string.IsNullOrWhiteSpace(x.Phone))
-            .WithMessage($"Phone must have between {PhoneNumber.MinDigits} and {PhoneNumber.MaxDigits} digits.");
+            .WithMessage("Informe o telefone com DDD ou deixe em branco.");
     }
 }
 
@@ -30,8 +30,8 @@ public sealed class SetProfessionalServicesRequestValidator : AbstractValidator<
     public SetProfessionalServicesRequestValidator()
     {
         RuleFor(x => x.ServiceIds).NotNull()
-            .Must(ids => ids.Count <= 100).WithMessage("Too many services.")
-            .Must(ids => ids.All(id => id > 0)).WithMessage("Service ids must be positive.");
+            .Must(ids => ids.Count <= 100).WithMessage("Serviços demais.")
+            .Must(ids => ids.All(id => id > 0)).WithMessage("Os serviços informados são inválidos.");
     }
 }
 
@@ -100,7 +100,7 @@ public sealed class ProfessionalsService(
         var existing = await db.Services.Where(s => wanted.Contains(s.Id)).Select(s => s.Id).ToListAsync(ct);
         var unknown = wanted.Except(existing).ToList();
         if (unknown.Count > 0)
-            throw Validation.Error(nameof(request.ServiceIds), $"Unknown service ids: {string.Join(", ", unknown)}.");
+            throw Validation.Error(nameof(request.ServiceIds), $"Serviços inexistentes: {string.Join(", ", unknown)}.");
 
         foreach (var link in professional.Services.Where(s => !wanted.Contains(s.ServiceId)).ToList())
             professional.Services.Remove(link);

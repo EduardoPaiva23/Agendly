@@ -26,14 +26,14 @@ public sealed class CreatePublicAppointmentRequestValidator : AbstractValidator<
     {
         var max = options.Value.MaxServicesPerAppointment;
         RuleFor(x => x.ProfessionalId).GreaterThan(0);
-        RuleFor(x => x.ServiceIds).NotEmpty().WithMessage("Select at least one service.")
-            .Must(ids => ids.Count <= max).WithMessage($"Select at most {max} services.")
+        RuleFor(x => x.ServiceIds).NotEmpty().WithMessage("Selecione pelo menos um serviço.")
+            .Must(ids => ids.Count <= max).WithMessage($"Selecione no máximo {max} serviços.")
             .Must(ids => ids.All(id => id > 0) && ids.Distinct().Count() == ids.Count)
-            .WithMessage("Service ids must be positive and distinct.");
+            .WithMessage("Os serviços informados são inválidos ou repetidos.");
         RuleFor(x => x.StartAt).NotEmpty();
         RuleFor(x => x.CustomerName).NotEmpty().MinimumLength(2).MaximumLength(120);
         RuleFor(x => x.CustomerPhone).Must(PhoneNumber.IsValid)
-            .WithMessage($"Phone must have between {PhoneNumber.MinDigits} and {PhoneNumber.MaxDigits} digits (with area code).");
+            .WithMessage("Informe o celular com DDD, por exemplo (11) 98765-4321.");
         RuleFor(x => x.CustomerEmail).EmailAddress().MaximumLength(254)
             .When(x => !string.IsNullOrWhiteSpace(x.CustomerEmail));
     }
@@ -63,7 +63,7 @@ public sealed class PublicBookingService(
         var professional = (await schedule.GetEligibleProfessionalsAsync(request.ServiceIds, request.ProfessionalId, ct))
             .SingleOrDefault()
             ?? throw Validation.Error(nameof(request.ProfessionalId),
-                "The selected professional is not available for the selected services.");
+                "O profissional escolhido não está disponível para os serviços selecionados.");
 
         var startUtc = request.StartAt.UtcDateTime;
         var localDate = clock.LocalDateOf(startUtc);
@@ -82,7 +82,7 @@ public sealed class PublicBookingService(
                 schedule.SlotStep, window.EarliestStart, window.LatestStart);
 
             if (!slots.Any(s => s.Start == startUtc))
-                throw new ConflictException("The selected time is no longer available. Please choose another time.");
+                throw new ConflictException("Este horário não está mais disponível. Escolha outro horário.");
 
             // Returning customers are recognized by phone; their stored data is not overwritten from a public form.
             var customer = await db.Customers.FirstOrDefaultAsync(c => c.Phone == phone, token)
@@ -117,12 +117,12 @@ public sealed class PublicBookingService(
         var appointment = await FindAsync(reference, tracking: true, ct);
 
         if (!appointment.IsActive)
-            throw new ConflictException($"This appointment is already {appointment.Status}.");
+            throw new ConflictException($"Este agendamento já está {AppointmentStatusText.Of(appointment.Status)}.");
         if (!CanCancelOnline(appointment))
             throw new ConflictException(
-                $"Online cancellation is only possible up to {_options.PublicCancellationMinNoticeHours} hour(s) before the start. Please contact the salon.");
+                $"O cancelamento online só é possível até {_options.PublicCancellationMinNoticeHours} hora(s) antes do horário. Entre em contato com o salão.");
 
-        appointment.Cancel(clock.UtcNow, string.IsNullOrWhiteSpace(request.Reason) ? "Cancelled by customer" : request.Reason);
+        appointment.Cancel(clock.UtcNow, string.IsNullOrWhiteSpace(request.Reason) ? "Cancelado pelo cliente" : request.Reason);
         await db.SaveChangesAsync(ct);
         return ToPublicDto(appointment);
     }

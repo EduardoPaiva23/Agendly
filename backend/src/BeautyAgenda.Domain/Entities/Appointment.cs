@@ -52,7 +52,7 @@ public class Appointment
         DateTime nowUtc)
     {
         if (services.Count == 0)
-            throw new DomainException("An appointment must include at least one service.");
+            throw new DomainException("Um agendamento precisa ter pelo menos um serviço.");
         if (startAtUtc.Kind != DateTimeKind.Utc)
             throw new ArgumentException("Start must be UTC.", nameof(startAtUtc));
 
@@ -88,9 +88,9 @@ public class Appointment
     public void ChangeStatus(AppointmentStatus target, DateTime nowUtc, string? reason = null)
     {
         if (target == Status)
-            throw new DomainException($"Appointment is already {Status}.");
+            throw new DomainException($"O agendamento já está {AppointmentStatusText.Of(Status)}.");
         if (!CanTransition(Status, target))
-            throw new DomainException($"Cannot change appointment status from {Status} to {target}.");
+            throw new DomainException($"Não é possível mudar o agendamento de {AppointmentStatusText.Of(Status)} para {AppointmentStatusText.Of(target)}.");
 
         Status = target;
         UpdatedAt = nowUtc;
@@ -107,7 +107,7 @@ public class Appointment
     public void Reschedule(int professionalId, DateTime newStartUtc, DateTime nowUtc)
     {
         if (!IsActive)
-            throw new DomainException($"A {Status} appointment cannot be rescheduled.");
+            throw new DomainException($"Um agendamento {AppointmentStatusText.Of(Status)} não pode ser reagendado.");
         if (newStartUtc.Kind != DateTimeKind.Utc)
             throw new ArgumentException("Start must be UTC.", nameof(newStartUtc));
 

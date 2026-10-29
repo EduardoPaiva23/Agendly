@@ -66,9 +66,9 @@ public sealed class DashboardService(IApplicationDbContext db, SalonClock clock)
         DateTimeOffset from, DateTimeOffset to, int? professionalId, bool includeCancelled, CancellationToken ct)
     {
         if (to <= from)
-            throw Validation.Error("to", "'to' must be after 'from'.");
+            throw Validation.Error("to", "A data final deve ser posterior à inicial.");
         if (to - from > TimeSpan.FromDays(MaxCalendarRangeDays))
-            throw Validation.Error("to", $"The period cannot exceed {MaxCalendarRangeDays} days.");
+            throw Validation.Error("to", $"O período não pode passar de {MaxCalendarRangeDays} dias.");
 
         var fromUtc = from.UtcDateTime;
         var toUtc = to.UtcDateTime;

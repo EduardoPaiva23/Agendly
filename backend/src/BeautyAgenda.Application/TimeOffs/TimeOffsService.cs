@@ -16,9 +16,9 @@ public sealed class CreateTimeOffRequestValidator : AbstractValidator<CreateTime
     public CreateTimeOffRequestValidator()
     {
         RuleFor(x => x.StartAt).NotEmpty();
-        RuleFor(x => x.EndAt).NotEmpty().GreaterThan(x => x.StartAt).WithMessage("EndAt must be after StartAt.");
+        RuleFor(x => x.EndAt).NotEmpty().GreaterThan(x => x.StartAt).WithMessage("O fim deve ser depois do início.");
         RuleFor(x => x).Must(x => x.EndAt - x.StartAt <= TimeSpan.FromDays(90))
-            .WithName("EndAt").WithMessage("A time-off cannot be longer than 90 days.");
+            .WithName("EndAt").WithMessage("Um bloqueio não pode durar mais de 90 dias.");
         RuleFor(x => x.Reason).MaximumLength(200);
     }
 }
@@ -62,7 +62,7 @@ public sealed class TimeOffsService(
                                  && a.StartAt < endUtc && a.EndAt > startUtc, token);
             if (conflicts > 0)
                 throw new ConflictException(
-                    $"The period overlaps {conflicts} active appointment(s). Reschedule or cancel them first.");
+                    $"O período coincide com {conflicts} agendamento(s) ativo(s). Reagende ou cancele antes de bloquear.");
 
             var entity = new ProfessionalTimeOff
             {

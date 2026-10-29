@@ -17,7 +17,7 @@ public sealed class CustomerRequestValidator : AbstractValidator<CustomerRequest
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
         RuleFor(x => x.Phone).Must(PhoneNumber.IsValid)
-            .WithMessage($"Phone must have between {PhoneNumber.MinDigits} and {PhoneNumber.MaxDigits} digits (with area code).");
+            .WithMessage("Informe o telefone com DDD, por exemplo (11) 98765-4321.");
         RuleFor(x => x.Email).EmailAddress().MaximumLength(254).When(x => !string.IsNullOrWhiteSpace(x.Email));
     }
 }
@@ -94,7 +94,7 @@ public sealed class CustomersService(
     private async Task EnsurePhoneIsFreeAsync(string phone, int? exceptId, CancellationToken ct)
     {
         if (await db.Customers.AnyAsync(c => c.Phone == phone && c.Id != exceptId, ct))
-            throw new ConflictException("Another customer already uses this phone number.");
+            throw new ConflictException("Já existe outro cliente com este telefone.");
     }
 
     private static string? NormalizeEmail(string? email) =>

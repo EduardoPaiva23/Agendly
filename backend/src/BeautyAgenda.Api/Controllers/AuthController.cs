@@ -22,7 +22,7 @@ public sealed class AuthController(IAuthService auth, IValidator<LoginRequest> v
         await validator.ValidateAndThrowAsync(request, ct);
         var result = await auth.LoginAsync(request, ct);
         if (result is null)
-            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Invalid email or password.");
+            return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "E-mail ou senha inválidos.");
         return Ok(result);
     }
 

@@ -43,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<AppointmentsService>();
         services.AddScoped<DashboardService>();
 
+        ValidationLocalization.Configure();
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, ServiceLifetime.Singleton);
         return services;
     }

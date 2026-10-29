@@ -111,7 +111,7 @@ public sealed class AppointmentsService(
         {
             var current = await LoadAsync(id, tracking: true, token);
             if (!current.IsActive)
-                throw new ConflictException($"A {current.Status} appointment cannot be rescheduled.");
+                throw new ConflictException($"Um agendamento {AppointmentStatusText.Of(current.Status)} não pode ser reagendado.");
 
             var targetProfessionalId = request.ProfessionalId ?? current.ProfessionalId;
             var serviceIds = current.Services.Select(s => s.ServiceId).Distinct().ToList();
@@ -122,7 +122,7 @@ public sealed class AppointmentsService(
                     && p.Services.Count(s => serviceIds.Contains(s.ServiceId)) == serviceIds.Count, token);
                 if (!eligible)
                     throw Validation.Error(nameof(request.ProfessionalId),
-                        "The selected professional is not active or does not perform all services of this appointment.");
+                        "O profissional escolhido está inativo ou não realiza todos os serviços deste agendamento.");
             }
 
             await db.LockProfessionalSchedulesAsync([current.ProfessionalId, targetProfessionalId], token);
@@ -137,7 +137,7 @@ public sealed class AppointmentsService(
             if (!AvailabilityCalculator.IsAvailable(candidate, working, busy[targetProfessionalId],
                     window.EarliestStart, window.LatestStart))
                 throw new ConflictException(
-                    "The new time is not available (outside business hours, in the past, or overlapping another booking or time-off).");
+                    "O novo horário não está disponível (fora do expediente, no passado ou sobrepondo outro agendamento ou bloqueio).");
 
             var before = new { current.ProfessionalId, current.StartAt, current.EndAt };
             current.Reschedule(targetProfessionalId, startUtc, clock.UtcNow);
